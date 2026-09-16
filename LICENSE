@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 maticivan
+Copyright (c) 2026 Ivan Matic, Rados Radoicic, and Andreas Spomer 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+----------------------------------------------------------------------------
+
+The directory src/boost contains an unmodified vendored subset of the Boost
+libraries (Multiprecision and Config, version 1.91.0), distributed under the
+Boost Software License 1.0. See src/boost/LICENSE. The MIT license above
+applies to all other files in this repository.
