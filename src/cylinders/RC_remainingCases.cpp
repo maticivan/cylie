@@ -115,33 +115,55 @@ namespace RC{
         }
         return res;
     }
- 
-    template<typename BigNum> int checkCase(long n){
-        std::string fName="cWindows/cyl_window_N"+std::to_string(n+1)+".txt";
-        std::vector<Line<BigNum> > lns=getLinesFromString<BigNum>( IOF::fileToString(fName) );
-        Frac<BigNum> rN=FA::dyadicBound(calculate_rN<BigNum>(n),140,1);
-        if(lns.size()!=n+1){
-            GL_RemVerificationError=100*n+5;
-            std::cout<<"Problem with "<<fName<<"\n";
-            return 0;
-        }
-        if(GL_RemVerificationError!=0){
-            std::cout<<"Problem with "<<fName<<" error code:"<<GL_RemVerificationError<<"\n";
-            return 0;
-        }
-        for(long i=0;i<n;++i){
-            for(long j=i+1;j<n+1;++j){
-                if(FA::dyadicBound(distSquare(lns[i],lns[j]),140,0)<rN){
-                    std::cout<<"-Failed at "<<n<<"\n";
-                    return 0;
-                }
+template<typename BigNum> int checkPairwiseDistances(const std::vector<Line<BigNum> >& lns,
+                                                     long numberOfLines,
+                                                     const Frac<BigNum>& lowerBoundTauSq,
+                                                     int roundToDyadic){
+    if(lns.size()!=numberOfLines){
+        GL_RemVerificationError=100*numberOfLines+5;
+        std::cout<<"Problem with a configuration with "<<numberOfLines<<" lines around the ball.\n";
+        return 0;
+    }
+    if(GL_RemVerificationError!=0){
+        std::cout<<"Problem with a configuration with "<<numberOfLines<<" lines around the ball. Error code:"<<GL_RemVerificationError<<"\n";
+        return 0;
+    }
+    for(long i=0;i<numberOfLines-1;++i){
+        for(long j=i+1;j<numberOfLines;++j){
+            Frac<BigNum> dSq=distSquare(lns[i],lns[j]);
+            if(roundToDyadic){dSq=FA::dyadicBound(dSq,140,0);}
+            if(dSq<lowerBoundTauSq){
+                std::cout<<"-Failed at "<<numberOfLines<<"\n";
+                return 0;
             }
         }
-        std::cout<<fName<<" success!\n";
-        return 1;
     }
+    std::cout<<numberOfLines<<" lines around the ball is successfully verified!\n";
+    return 1;
+}
+    template<typename BigNum> int checkCase(long n){
+        return checkPairwiseDistances(
+                getLinesFromString<BigNum>(IOF::fileToString("cWindows/cyl_window_N"+std::to_string(n+1)+".txt")),
+                n+1,FA::dyadicBound(calculate_rN<BigNum>(n),140,1),1);
+    }
+template<typename BigNum> int successExpansion5(){
+    std::vector<std::string> rawDataV2=SF::stringToVector(IOF::fileToString("cWindows/cyl_window_E5.txt"),
+                                                          CPC::GL_openTag,
+                                                          CPC::GL_closeTag);
+    if(rawDataV2.size()!=2){return 0;}
+    std::vector<long> tauV2=SF::stringToVectorLong(rawDataV2[0],CPC::GL_openTag,CPC::GL_closeTag);
+    if(tauV2.size()!=2){return 0;}
+    BigNum tau2Num=FA::multiplyBigNumbers(tauV2[0],tauV2[0]);
+    BigNum tau2Den=FA::multiplyBigNumbers(tauV2[1],tauV2[1]);
+    Frac<BigNum> lbTauSq(tau2Num,tau2Den);
+    return checkPairwiseDistances<BigNum>( getLinesFromString<BigNum>(rawDataV2[1]), 5, lbTauSq,0);
+}
     template<typename BigNum> int checkCases(){
-        int successPinwheel=PC::checkInequalities<BigNum>(); 
+        if(successExpansion5<BigNum>()==0){
+            std::cout<<"Failed proof of expansion 5\n";
+            return 0;
+        }
+        int successPinwheel=PC::checkInequalities<BigNum>();
         if(successPinwheel==0){
             return 0;
         }
