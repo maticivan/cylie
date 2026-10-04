@@ -224,7 +224,7 @@ namespace SOSC{
 
     // ---------------------------------------------------------------- the SOS stage
     //
-    // Returns 1 only if (S0), (S1), (S2)+(S3) and V:gens all hold for the deposited data.
+    // Returns 1 only if (S0), (S1), (S2)+(S3) and Generator check all hold for the deposited data.
     template<typename BigNum>
     int verifyCertificate(const std::map<std::string,std::string>& mainMap,
                           const CPC::TestSetup<BigNum>& ts){
@@ -344,25 +344,25 @@ namespace SOSC{
         }
         std::cout<<"(S1) all four Gram matrices certified positive semidefinite\n";
 
-        // ---- V:gens: deposited generators equal the constructed ones ----
+        // ---- Generator check: deposited generators equal the constructed ones ----
         {
             int ok=1;
             PA::Polynomial<Frac<BigNum> > depositedUh=polynomialFromRows<BigNum>(mainMap.find("UhPoly")->second,&ok);
             PA::Polynomial<Frac<BigNum> > depositedQh=polynomialFromRows<BigNum>(mainMap.find("QhPoly")->second,&ok);
             if(ok==0){
-                std::cout<<"V:gens failed: UhPoly/QhPoly rows are malformed\n";
+                std::cout<<"Generator check failed: UhPoly/QhPoly rows are malformed\n";
                 return 0;
             }
             if(PA::equal(depositedUh,ts.pol_Uh)==0){
-                std::cout<<"V:gens failed: deposited UhPoly differs from the U_h constructed from tauSq\n";
+                std::cout<<"Generator check failed: deposited UhPoly differs from the U_h constructed from tauSq\n";
                 return 0;
             }
             if(PA::equal(depositedQh,ts.pol_Qh)==0){
-                std::cout<<"V:gens failed: deposited QhPoly differs from the Q_h constructed from tauSq\n";
+                std::cout<<"Generator check failed: deposited QhPoly differs from the Q_h constructed from tauSq\n";
                 return 0;
             }
         }
-        std::cout<<"V:gens verified: deposited generators equal the constructed U_h, Q_h\n";
+        std::cout<<"Generator check verified: deposited generators equal the constructed U_h, Q_h\n";
 
         // ---- left-hand side: 2^{kappa_s} (|q|^2)^k G, with G = pol_G / den(M) ----
         // pol_G is den(M)*G with den(M) the REDUCED denominator of M; the raw MDen record of the
@@ -420,7 +420,7 @@ namespace SOSC{
         }
         std::cout<<"(S2)-(S3) identity 2^kappa_s (|q|^2)^k G = Sigma_0 + Sigma_1 U_h + Sigma_2 Q_h";
         std::cout<<" + Sigma_3 U_h Q_h verified exactly ("<<numEquations<<" coefficient equations)\n";
-        std::cout<<"Hypothesis (H6) is proved: G >= 0 on K_h.\n";
+        std::cout<<"Hypothesis (H6) is proved: G >= 0 on D_h(tau).\n";
         return 1;
     }
     template<typename BigNum>
@@ -431,7 +431,7 @@ namespace SOSC{
         long kappaS=smallNumberFromRecord<BigNum>(mainMap,"sosDenLog2",&okScalar);
         std::string res;
         res+="\\section{Sum of squares certificate}\n";
-        res+="The hypothesis $G\\ge 0$ on $K_h$ is established by the identity\n";
+        res+="The hypothesis $G\\ge 0$ on $D_h(tau)$ is established by the identity\n";
         res+="\\[2^{"+std::to_string(kappaS)+"}\\left(|q|^2\\right)^{"+std::to_string(k)+"}G=";
         res+="\\Sigma_0+\\Sigma_1U_h+\\Sigma_2Q_h+\\Sigma_3U_hQ_h,\\]\n";
         res+="where each $\\Sigma_a$ is a positive semidefinite quadratic form in the monomials of\n";
