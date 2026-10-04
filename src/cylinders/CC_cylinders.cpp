@@ -28,9 +28,9 @@
 #include <cstdio>
 #include <cstdlib>
 namespace CC{
-// Set to 0 to refuse certificates that carry no SOS records at all, as the plan block
-// prescribes for the end of the transition. While it is 1, such files are still proved by the
-// old box route, so the two routes can be compared on the same file (plan item T1).
+// If 1, a certificate without SOS records is checked by the earlier box-subdivision route.
+// All deposited certificates carry SOS records, so they never take this route.
+// Set to 0 to refuse certificates without SOS records.
 long GL_allowLegacyBoxRoute=1;
 std::atomic<int> GL_stopRequested=0;
 extern "C" void requestStop(int){
@@ -617,7 +617,7 @@ template<typename BigNum>
 int mainWorkFromMap(const std::map<std::string,std::string> & mainMap, const std::string& scDest){
     CPC::TestSetup<BigNum> ts=CPC::getFromMap<BigNum>(mainMap);
     if(ts.success==0){std::cout<< "Failed.\n";return 0;}
-    // Hypothesis (H6), G>=0 on K_h, is established either by the sum-of-squares identity or,
+    // Hypothesis (H6), G>=0 on D_h(tau), is established either by the sum-of-squares identity or,
     // for certificates emitted before the SOS records existed, by box subdivision. A file that
     // carries any SOS record is verified only by the SOS route: falling back for a file with a
     // missing or damaged SOS record would let a tampered certificate reach the PASS line by
