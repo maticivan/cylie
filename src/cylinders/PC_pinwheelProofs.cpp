@@ -25,6 +25,14 @@
 #ifndef __INCL_PC_CPP
 #define __INCL_PC_CPP
 namespace PC{
+// Correspondence with the paper:
+//   S = sin(varphi), T = tan(delta).
+//   a = S*T. The paper does not name it and writes ST and S^2T^2 = a*a.
+//   c0 = c_0 = (1-S^2)(1+T^2).
+//   PhiSq = Phi^2 = (1-S^2)^2 T^2 / ((S^2+T^2)(1+T^2)).
+//   PsiSq = c0/(1+a^2)^2.
+//     The check Psi^{-1} > 21/20 is the inequality (21/20) sqrt(c_0) < 1 + S^2T^2 of the paper.
+//   theta = pi/(N-s) with s in {1,2}, as in the two tail lemmas.
 long GL_PI_NUM_SMALL_LOW_PRECISION=3141592;
 long GL_PI_DEN_LOW_PRECISION      =1000000;
 template<typename BigNum> int check2PhiBiggerThan21Over20(const Frac<BigNum>& PhiSq){
@@ -35,7 +43,7 @@ template<typename BigNum> int check2PhiBiggerThan21Over20(const Frac<BigNum>& Ph
     }
     template<typename BigNum> int checkPsiInvBiggerThan21Over20(const Frac<BigNum>& PsiSq){
         // The function assumes that PsiSq is positive
-        // Psi^{-1}>21/20 <=> Psi<20/21 <=> Psi^2<20^2<21^2
+        // Psi^{-1}>21/20 <=> Psi<20/21 <=> si^2<20^2/21^2
         Frac<BigNum> oth(20*20,21*21);
         return PsiSq<oth;
     }
@@ -49,7 +57,7 @@ template<typename BigNum> int check2PhiBiggerThan21Over20(const Frac<BigNum>& Ph
         // \bar{u}=\sqrt{c0}\cdot(\theta+\theta^3)
         // \theta=\pi/(N-s)
         //
-        // Indequality is equivalent to
+        // Inequality is equivalent to
         // \bar{u}^2<1+a^2 <=> c0*(\theta+\theta^3)^2<1+a^2
         //   Suffices to prove
         // c0*( piUpperBound/(N-s) + (piUpperBound/(N-s))^3)^2<1+a^2
