@@ -183,6 +183,13 @@ namespace CPC{
         }
         return res;
     }
+    // Correspondence with the paper:
+    // paper_R[i][j] is the entry R_{i+1,j+1} of R(q), and tau^2 = A/B.
+    //   H_h      = R_23^2 + (R_33 - |q|^2)^2 = 4[(q_2q_3-q_0q_1)^2+(q_1^2+q_2^2)^2].
+    //   Q_part1  = 4 q_1^2 q_2^2.
+    //   Q_part2  = (q_0^2+q_1^2)(q_2^2+q_3^2).
+    //   paper_Uh = B*H_h - A*(|q|^2)^2 = U_h.
+    //   paper_Qh = B*Q_part1 - A*Q_part2 = Q_h.
     template<typename BigNum>
     struct Components{
     public:
@@ -710,6 +717,12 @@ template<typename BigNum>
                                      const std::vector<std::vector<Frac<BigNum> > >& array_invWDiagonals,
                                  long L,
                                  const Frac<BigNum> & M){
+        // The certificate files store C_ell multiplied by a scale -M > 0 (records MNum, MDen).
+        // Dividing the stored C_ell and TStar by -M gives the C_ell and T* of the certificate
+        // theorem of the paper. Hence the polynomial computed here is
+        //   resG = MDen*(M*(|q|^2)^L - P_stored) = (-MNum) * G,
+        // where G = -(|q|^2)^L - P is the polynomial G of the paper. Since -MNum > 0,
+        // resG and G have the same sign, which is all that the cover hypothesis uses.
         PA::Polynomial<Frac<BigNum> > resG=createP(array_C,array_TPolynomials,array_invWDiagonals,L);
         Frac<BigNum> one(1,1);
         PA::Polynomial<Frac<BigNum> > tmp(one);
@@ -735,91 +748,53 @@ template<typename BigNum>
         long LMax;
         long targetBound;
         Frac<BigNum> tauSq;
-        Frac<BigNum> M;
-        Frac<BigNum> TStar;
+        Frac<BigNum> M;      // M < 0. C_ell of the paper = (stored C_ell)/(-M).
+        Frac<BigNum> TStar;  // T* of the paper = TStar/(-M).
         int success=0;
     };
 template<typename BigNum>
     TestSetup<BigNum> getFromMap(const std::map<std::string,std::string>& mainMap){
         // ============================================================================
-        // SOS VERIFICATION PLAN (replaces box subdivision; everything else unchanged)
-        // Record names below must match Appendix app:data of the paper exactly.
-        // ============================================================================
+        // Reads a certificate and assembles the data of the certificate theorem.
+        // Record names match the description of the certificate files in the paper.
         //
-        // NEW CERTIFICATE RECORDS
+        // SOS RECORDS (checked in SOSC_sosCertificate.cpp)
         //   sosExponentK              the integer k >= 0 of the identity; requires L+k >= 4
-        //   sosDenLog2                ONE shared even integer kappa_s scaling all four Grams
-        //                             (no per-block denominators; W carries no denominator at all:
-        //                             the witness check is purely integer)
-        //   sosGram000a  (a=0..3)     integer SYMMETRIC matrix = 2^{kappa_s} * Sigma_a
-        //   sosSwit000a  (a=0..3)     integer scalar S_a  (verifier must check S_a >= 1)
-        //   sosWwit000a  (a=0..3)     integer MATRIX W_a, same shape as sosGram000a
-        //   UhPoly, QhPoly            integer coefficient lists of the generators, Tpoly row
-        //                             format (paper check V:gens; see DECISION below)
-        //   Old files without these records: refuse with a clear "pre-SOS certificate" message
-        //   (upgrade path is re-emission by cylgen, never file patching).
-        //
-        // VERIFIER = old checks V1..V5 verbatim (well-formedness, tables/H:mult/H:orth,
-        // C-witnesses, trace = T*, counting inequality), MINUS all box code (presplit, corner
-        // bounds, adaptive stack, threads, saved-state/resume -- delete, git remembers), PLUS:
+        //   sosDenLog2                one shared even integer kappa_s scaling all four Grams
+        //   sosGram000a  (a=0..3)     integer symmetric matrix = 2^{kappa_s} * Sigma_a
+        //   sosSwit000a  (a=0..3)     integer scalar S_a >= 1
+        //   sosWwit000a  (a=0..3)     integer matrix W_a, same shape as sosGram000a
+        //   UhPoly, QhPoly            integer coefficient lists of U_h and Q_h, in the Tpoly row
+        //                             format. They are compared, coefficient by coefficient,
+        //                             with the polynomials constructed below.
         //
         // (S0) SHAPE. Each sosGram000a is symmetric, with the prescribed size:
         //        Sigma_0: n_{L+k},  Sigma_1, Sigma_2: n_{L+k-2},  Sigma_3: n_{L+k-4},
-        //      where n_d = binom(d+3,3) = #monomials of degree d in q_0..q_3, computed from the
-        //      deposited L and k. (L+k >= 4 exists only so Sigma_3's basis exists.)
-        //      Reject asymmetry -- do not silently symmetrize: step (S2) presumes it.
+        //      where n_d = binom(d+3,3) = #monomials of degree d in q_0..q_3.
+        //      Asymmetry is rejected, not symmetrized.
         //
-        // (S1) PSD, by the existing Prop prop:psd machinery, verbatim as for the C_ell:
+        // (S1) PSD, by the same witness check as for the C_ell:
         //        E_a = S_a * (2^{kappa_s} Sigma_a) - W_a^T W_a
-        //      is symmetric, diagonally dominant, nonnegative diagonal, AND S_a >= 1
-        //      (the implication fails for S_a <= 0; one-line check, real hole).
-        //      ==> Sigma_a is positive semidefinite ==> sigma_a(q) >= 0 for ALL q.
+        //      is symmetric, diagonally dominant, with nonnegative diagonal, and S_a >= 1.
+        //      ==> Sigma_a is positive semidefinite ==> sigma_a(q) >= 0 for all q.
         //
-        // (S2) EXPANSION (symbolic -- no point q is ever evaluated anywhere):
-        //        2^{kappa_s} * sigma_a = sum over upper triangle i <= j of
-        //        (2 - delta_ij) * (sosGram000a)_{ij} * monomial_i * monomial_j.
-        //      Monomial order of the basis vector m_d is a FIXED shared convention with cylgen
-        //      (lexicographic on exponent vectors). A mismatch only fails a valid certificate
-        //      (completeness), never passes an invalid one (soundness) -- still, document it.
+        // (S2) EXPANSION (symbolic, no point q is evaluated):
+        //        2^{kappa_s} * sigma_a = sum over i <= j of
+        //        (2 - delta_ij) * (sosGram000a)_{ij} * monomial_i * monomial_j,
+        //      with the monomials in lexicographic order of exponent vectors.
         //
-        // (S3) THE IDENTITY, entirely over integers (clear 2^{kappa_s}; U_h, Q_h are already
-        //      integer polynomials for integer A, B; never divide the deposited Grams):
+        // (S3) THE IDENTITY, over the integers:
         //        2^{kappa_s} * (|q|^2)^k * G
         //          == [2^{kappa_s} sigma_0] + [2^{kappa_s} sigma_1]*U_h
         //           + [2^{kappa_s} sigma_2]*Q_h + [2^{kappa_s} sigma_3]*U_h*Q_h,
-        //      compared coefficient by coefficient: n_{2L+2k} integer equalities
-        //      (455 at L=4, k=2; Gram sizes 84/35/35/10).
-        //      G, U_h, Q_h come from the battle-tested CPC::getFromMap path, unchanged,
-        //      including the trace fingerprint. Word-width selection and overflow guards now
-        //      depend on k as well as L.
+        //      compared coefficient by coefficient (n_{2L+2k} integer equalities).
         //
-        // DECISION (resolved): U_h, Q_h are CONSTRUCTED by getFromMap as today (maximal reuse
-        // of the vetted path), AND deposited as UhPoly/QhPoly; new check V:gens compares the
-        // constructed polynomials against the deposited lists coefficient by coefficient
-        // (~10 lines). This keeps the paper's lean contract honest without touching the old code.
+        // Every failure (bad witness, S_a < 1, wrong shape, identity mismatch, missing record,
+        // arithmetic flag) refuses to certify.
         //
-        // SOUNDNESS INVARIANT (preserves the HSC_helpString contract verbatim): every failure
-        // mode -- bad witness, S_a < 1, wrong shape, identity mismatch, missing record, any
-        // arithmetic flag -- refuses to certify; no certificate content can make the program
-        // print the PASS line for a false statement. Search/provenance of the Sigma_a is
-        // irrelevant to the verifier.
-        //
-        // THEN THE THEOREM IS PROVED: on K = {U_h >= 0, Q_h >= 0}, every RHS term of (S3) is
-        // >= 0 by (S1), so (|q|^2)^k G >= 0, and q != 0 lets us divide. (Theorem thm:sos.)
-        //
-        // REUSE MAP: parser (SF), Frac/FA (checked ints, flags), PA polynomial multiply,
-        // CPC::getFromMap, prop:psd witness check, V1-V5, CLI/verdict, pinwheel mode: UNCHANGED.
-        // NEW CODE (~150-250 lines, no new arithmetic/threading): monomial basis enumeration in
-        // the fixed order, Gram->polynomial expansion, RHS assembly, integer comparison, record
-        // reading + (S0) + S_a>=1, width logic extended by k.
-        //
-        // TESTS: (T1) one certificate verified BOTH ways (old box verifier vs this) -- shared
-        // V1-V5 and G-assembly isolate any divergence to the new lines; (T2) negative battery:
-        // perturb one Gram entry / one witness entry / one dimension / drop one record -- each
-        // must refuse without printing PASS; (T3) develop against a ground-truth certificate
-        // (Claude to generate: tau=1, M retuned with interior slack, rounded Sigmas + witnesses)
-        // so the verifier is never debugged against untested cylgen output.
-        // ============================================================================
+        // CONSEQUENCE: on K = {U_h >= 0, Q_h >= 0}, every term on the right of (S3) is >= 0
+        // by (S1), so (|q|^2)^k G >= 0, and q != 0 lets us divide.
+        // ============================================================================ 
         
         TestSetup<BigNum> res;res.success=0;
         res.LMax=getNumber(mainMap,"Lmax");
