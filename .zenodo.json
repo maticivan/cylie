@@ -1,0 +1,20 @@
+{
+  "upload_type": "software",
+  "title": "cylie: certificates, configurations, and a standalone exact-arithmetic verifier for cylinder insertions and expansions",
+  "version": "1.0.0",
+  "license": "MIT",
+  "creators": [
+    {"name": "Matić, Ivan", "affiliation": "Baruch College, City University of New York"},
+    {"name": "Radoičić, Radoš", "affiliation": "Baruch College, City University of New York"},
+    {"name": "Spomer, Andreas", "affiliation": "Universität zu Köln"}
+  ],
+  "description": "<p>Data and standalone verifier for the computer-assisted proofs in the paper <em>Insertion and expansion of cylinders around the unit ball</em> by I. Matić, R. Radoičić and A. Spomer.</p><p>The repository contains rational certificates showing that no more than n non-overlapping cylinders of the stated radii can touch the unit ball for n = 4, 5, 6, 7, explicit rational configurations for the insertion results, and the verifier cylie, which checks all of them in exact arithmetic.</p><p>The authors' code is released under the MIT License. The vendored subset of Boost 1.91.0 in src/boost is distributed under the Boost Software License 1.0.</p>",
+  "keywords": [
+    "cylinder packing",
+    "kissing configurations",
+    "sum-of-squares certificates",
+    "semidefinite programming",
+    "computer-assisted proof",
+    "exact arithmetic"
+  ]
+}
