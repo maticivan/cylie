@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software or data, please cite it as below."
+type: software
+title: "cylie: certificates, configurations, and a standalone exact-arithmetic verifier for cylinder insertions and expansions"
+version: "1.0.0"
+license: MIT
+repository-code: "https://github.com/maticivan/cylie"
+authors:
+  - family-names: "Matić"
+    given-names: "Ivan"
+    affiliation: "Baruch College, City University of New York"
+  - family-names: "Radoičić"
+    given-names: "Radoš"
+    affiliation: "Baruch College, City University of New York"
+  - family-names: "Spomer"
+    given-names: "Andreas"
+    affiliation: "Universität zu Köln"
+keywords:
+  - cylinder packing
+  - kissing configurations
+  - sum-of-squares certificates
+  - semidefinite programming
+  - computer-assisted proof
+  - exact arithmetic
+abstract: >-
+  Data and standalone verifier for the computer-assisted proofs in the paper
+  "Insertion and expansion of cylinders around the unit ball" by I. Matić,
+  R. Radoičić and A. Spomer. The repository contains rational certificates
+  showing that no more than n non-overlapping cylinders of the stated radii
+  can touch the unit ball for n = 4, 5, 6, 7, explicit rational
+  configurations for the insertion results, and the verifier cylie, which
+  checks all of them in exact arithmetic.
